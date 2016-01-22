@@ -96,6 +96,7 @@ public class SocketManager {
 		DatagramSocket client_socket = new MulticastSocket();
 		InetAddress IPAddress =  InetAddress.getByName("255.255.255.255");
 		ParameterManager.send_data = ParameterManager.taskInfo.getBytes();
+		Log.d(TAG,"the broadcast info is:"+ParameterManager.taskInfo);
 
 		System.out.println(ParameterManager.send_data);
 		DatagramPacket send_packet = new DatagramPacket(ParameterManager.send_data,ParameterManager.taskInfo.length(),IPAddress , UDP_PORT);
@@ -155,6 +156,7 @@ public class SocketManager {
 	private void setServerSocket(){
 		try {
 			mServerSocket = new ServerSocket(TCP_PORT);
+			Log.d(TAG,"the TCP_PORT on Server is:"+TCP_PORT);
 
 		} catch (IOException e) {
 			e.printStackTrace();

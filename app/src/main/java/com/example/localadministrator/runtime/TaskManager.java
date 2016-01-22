@@ -99,12 +99,10 @@ public class TaskManager{
             }
         }
     }
-
     public void collectResponse(Map<String, String> record,WifiP2pDevice device){
 
         //judge whether we want to handle this task as the offload target.
         //record the response into a container, waiting for the checkNewTasks's timer to gather feedbacks.
-
     }
 
     void onDestroy(){

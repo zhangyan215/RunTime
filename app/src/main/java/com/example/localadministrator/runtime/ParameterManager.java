@@ -18,4 +18,6 @@ public class ParameterManager {
 	public static long period = 30000;
 	//Ble delay
 	public static long delay = 1000;
+	//the task type
+	public static String serviceType = "";
 }

@@ -63,7 +63,7 @@ public class innerDeviceService extends Service {
     private WifiManager wifiManager;
     private WifiInfo wifiInfo;
     String str;
-    String serviceType;
+    //String serviceType;
     private BluetoothLeClass mBLE;
     private WifiServiceManager mWifi ;
 
@@ -71,6 +71,7 @@ public class innerDeviceService extends Service {
     MessengerChatService mChatService = null;
     SocketManager manager = null;
     int connectState;
+    ActivityInvoke mActivityInvoke = null;
 
 
     public innerDeviceService() {
@@ -93,7 +94,7 @@ public class innerDeviceService extends Service {
             // there should first be a task queue here,
             // then a thread process all the tasks.
             RQLParser parser = new RQLParser(RQL);
-            serviceType = parser.getServices();
+            ParameterManager.serviceType = parser.getServices();
             if(parser.checkGrammar()==false){
                 return -1;
             }
@@ -102,12 +103,17 @@ public class innerDeviceService extends Service {
             //put the rql into the outgoingTask ArrayList
             tm.outgoingTasks.addLast(parser);
             System.out.println(parser.getDeviceName());
-            manager.setTCP_PORT(2600);
-            manager.setUDP_PORT(26000);
+            manager.setTCP_PORT(2400);
+            manager.setUDP_PORT(24000);
             ParameterManager.taskInfo = "this is a  task!";
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    manager.serverManage();
+                }
+            }).start();
 
-            //manager.serverManage();
-            manager.clientManage();
+            //manager.clientManage();
            // System.out.println("the received udp value is"+ParameterManager.receive);
             bleInitialize();
             //mChatService = new MessengerChatService();
@@ -117,8 +123,10 @@ public class innerDeviceService extends Service {
             timer.schedule(new BLEScan(),ParameterManager.delay,ParameterManager.period);
 
 
-            Log.d(TAG,"1111");
-            activityStart();
+            Log.d(TAG, "1111");
+            mActivityInvoke = new ActivityInvoke(innerDeviceService.this);
+            mActivityInvoke.activityStart();
+            //activityStart();
            // System.out.println(mLeDevices.size());
            // scanLeDevice(true);
            // tm.outgoingTasks.removeFirst();
@@ -399,29 +407,6 @@ public class innerDeviceService extends Service {
         }
 
 
-        //used to determine which app will be started.
-        public void activityStart() {
-            ComponentName comp = null;
-            Log.d(TAG, "the serviceType is:" + serviceType);
-            Intent intent = new Intent();
-            if (serviceType.contains("gps")) {
-                comp = new ComponentName("com.example.testb.testb", "com.example.testb.testb.MainActivity");
-            } else if (serviceType.contains("face")) {
-                comp = new ComponentName("com.example.servicetest.facedetectiontest","com.example.servicetest.facedetectiontest.MainActivity");
-            } else {
-                //
-            }
-            intent.setComponent(comp);
-            //getPackageManager().getLaunchIntentForPackage("com.example.test.newprocess");
-            intent.setAction("android.intent.action.MAIN");
-            //intent1.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);*//*
-            if (intent == null) {
-                Toast.makeText(getApplicationContext(), "hi,please install this app", Toast.LENGTH_LONG).show();
-            } else {
-                //*intent.setAction("android.intent.zhy.action.IMAGE");
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(intent);
-            }
-        }
+
     }
 
