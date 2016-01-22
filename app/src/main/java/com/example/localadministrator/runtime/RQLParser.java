@@ -1,10 +1,13 @@
 package com.example.localadministrator.runtime;
 
+import android.util.Log;
+
 import java.util.Arrays;
 import java.lang.Long;
 import java.util.Date;
 
 public class RQLParser {
+	private static final String TAG = RQLParser.class.getCanonicalName();
 	String RQL;
 	String DeviceName = "";
 	String DeviceType = "";
@@ -199,6 +202,10 @@ public class RQLParser {
 				}
 			}
 			noun_service_name = tmp[0]+"/"+tmp[1];
+			ParameterManager.assistName = noun_device_name;
+			//Log.d(TAG,"the noun_service_type:")
+			ParameterManager.serviceType = noun_service_name;
+			Log.d("RQLParser","the assistName is: "+ParameterManager.assistName+"the serviceType is:"+ParameterManager.serviceType);
 			
 			return this.grammarCheck();
 		}

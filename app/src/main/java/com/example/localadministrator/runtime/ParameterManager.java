@@ -20,4 +20,10 @@ public class ParameterManager {
 	public static long delay = 1000;
 	//the task type
 	public static String serviceType = "";
+	//the name in the rql
+	public static String assistName = "";
+	//if use BTLE
+	public static boolean isBTLE;
+	//if use Wifi
+	public static boolean isWifi;
 }

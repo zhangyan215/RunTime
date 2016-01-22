@@ -72,6 +72,7 @@ public class innerDeviceService extends Service {
     SocketManager manager = null;
     int connectState;
     ActivityInvoke mActivityInvoke = null;
+    ChannelManager mChannelManager = null;
 
 
     public innerDeviceService() {
@@ -94,7 +95,7 @@ public class innerDeviceService extends Service {
             // there should first be a task queue here,
             // then a thread process all the tasks.
             RQLParser parser = new RQLParser(RQL);
-            ParameterManager.serviceType = parser.getServices();
+          //  ParameterManager.serviceType = parser.getServices();
             if(parser.checkGrammar()==false){
                 return -1;
             }
@@ -103,26 +104,33 @@ public class innerDeviceService extends Service {
             //put the rql into the outgoingTask ArrayList
             tm.outgoingTasks.addLast(parser);
             System.out.println(parser.getDeviceName());
-            manager.setTCP_PORT(2400);
-            manager.setUDP_PORT(24000);
-            ParameterManager.taskInfo = "this is a  task!";
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    manager.serverManage();
-                }
-            }).start();
 
             //manager.clientManage();
            // System.out.println("the received udp value is"+ParameterManager.receive);
-            bleInitialize();
+
             //mChatService = new MessengerChatService();
 
            // deviceScan.scanLeDevice(true);
-            Timer timer = new Timer(false);
-            timer.schedule(new BLEScan(),ParameterManager.delay,ParameterManager.period);
 
+            mChannelManager = new ChannelManager();
+            mChannelManager.ChannelChooseStrategy();
+            if(ParameterManager.isBTLE==true){
+                bleInitialize();
+                Timer timer = new Timer(false);
+                timer.schedule(new BLEScan(), ParameterManager.delay, ParameterManager.period);
+            }
+            if(ParameterManager.isWifi==true){
+                manager.setTCP_PORT(2400);
+                manager.setUDP_PORT(24000);
+                ParameterManager.taskInfo = "this is a  task!";
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        manager.serverManage();
+                    }
+                }).start();
 
+            }
             Log.d(TAG, "1111");
             mActivityInvoke = new ActivityInvoke(innerDeviceService.this);
             mActivityInvoke.activityStart();
