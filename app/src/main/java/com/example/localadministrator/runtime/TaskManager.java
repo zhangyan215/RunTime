@@ -99,7 +99,7 @@ public class TaskManager{
             }
         }
     }
-
+    ///useless
     public void collectResponse(Map<String, String> record,WifiP2pDevice device){
 
         //judge whether we want to handle this task as the offload target.
