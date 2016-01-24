@@ -189,6 +189,7 @@ public class SocketManager {
 		try {
 			isServer = new DataInputStream(client.getInputStream());
 			osServer = new DataOutputStream(client.getOutputStream());
+			chatProcessOnServer();
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -196,7 +197,7 @@ public class SocketManager {
 	}
 	private void chatProcessOnClient(){
 		try {
-			ioStreamOnClient();
+			//ioStreamOnClient();
 			osClient.write("you are doby".getBytes("UTF-8"));
 			osClient.flush();
 			//System.out.println(getBidInfo());
@@ -229,7 +230,7 @@ public class SocketManager {
 	private void chatProcessOnServer() throws IOException {
 
 		try{
-			ioStreamOnServer();
+			//ioStreamOnServer();
 			/*dos = new DataOutputStream(client.getOutputStream());
 			is = new DataInputStream(client.getInputStream());*/
 
@@ -315,7 +316,9 @@ public class SocketManager {
 
 		}
 		String str = new String (buffer);
+		Log.d(TAG,"the received info is:"+str);
 		return str;
+
 	}
 	class ServerThread extends Thread{
 
@@ -326,7 +329,8 @@ public class SocketManager {
 				try {
 					client = mServerSocket.accept();
 					Log.i(TAG, "Service accept the request from the client..");
-					chatProcessOnServer();
+					ioStreamOnServer();
+					//chatProcessOnServer();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

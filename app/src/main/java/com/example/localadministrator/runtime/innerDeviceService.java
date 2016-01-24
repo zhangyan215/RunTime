@@ -54,8 +54,9 @@ public class innerDeviceService extends Service {
     WiFiP2PInterfaces wifiP2PInterface;
 
     private ArrayList<BluetoothDevice> mLeDevices = new ArrayList<>();
-    // BluetoothReceiver bluetoothReceiver =null;
+
     BluetoothAdapter bluetoothAdapter =null;
+    BluetoothLeAdvertiser bluetoothLeAdvertiser = null;
     private BluetoothLeAdvertiser mBluetoothLeAdvertiser;
     IntentFilter intentFilter = null;
     //IntentFilter intentFilterEnd =null;
@@ -67,12 +68,15 @@ public class innerDeviceService extends Service {
     private BluetoothLeClass mBLE;
     private WifiServiceManager mWifi ;
 
-    private Handler mHandler = new Handler();
+    public static Handler mHandler1 = new Handler();
+    public static Handler mHandler2 = new Handler();
     MessengerChatService mChatService = null;
     SocketManager manager = null;
     int connectState;
     ActivityInvoke mActivityInvoke = null;
     ChannelManager mChannelManager = null;
+    BLEPeripheral blePeripheral;
+    BLEGattManager bleGattManager;
 
 
     public innerDeviceService() {
@@ -114,12 +118,17 @@ public class innerDeviceService extends Service {
 
             mChannelManager = new ChannelManager();
             mChannelManager.ChannelChooseStrategy();
-            if(ParameterManager.isBTLE==true){
-                bleInitialize();
-                Timer timer = new Timer(false);
-                timer.schedule(new BLEScan(), ParameterManager.delay, ParameterManager.period);
+
+            if(ParameterManager.isBTLE==false){
+              //  mBTLEManager = new BTLEManager();
+                bleGattManager = new BLEGattManager(innerDeviceService.this);
+                bleGattManager.bleInitialize();
+                bleGattManager.bleScan();
+               // bleInitialize();
+                /*Timer timer = new Timer(false);
+                timer.schedule(new BLEScan(), ParameterManager.delay, ParameterManager.period);*/
             }
-            if(ParameterManager.isWifi==true){
+            if(ParameterManager.isWifi==false){
                 manager.setTCP_PORT(2400);
                 manager.setUDP_PORT(24000);
                 ParameterManager.taskInfo = "this is a  task!";
@@ -187,234 +196,6 @@ public class innerDeviceService extends Service {
        // mBLE.close();
 
     }
-    public void bleInitialize() {
-        // Use this check to determine whether BLE is supported on the device.  Then you can
-        // selectively disable BLE-related features.
-        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            Toast.makeText(innerDeviceService.this, "ble_not_supported", Toast.LENGTH_LONG).show();
-            stopSelf();
-        }
-        // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
-        // BluetoothAdapter through BluetoothManager.
-        final BluetoothManager mBluetoothManager = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
-        bluetoothAdapter = mBluetoothManager.getAdapter();
-        // Checks if Bluetooth is supported on the device.
-        if (bluetoothAdapter == null) {
-            Toast.makeText(innerDeviceService.this, "bluetooth_not_supported", Toast.LENGTH_LONG).show();
-            stopSelf();
-        }
-        if (!bluetoothAdapter.enable()) {
-            bluetoothAdapter.enable();
-        }
 
-        mBLE = new BluetoothLeClass(innerDeviceService.this);
-        if (!mBLE.initialize()) {
-            Log.e(TAG, "Unable to initialize Bluetooth");
-            stopSelf();
-        }
-        //callback when find the services on the ble devices;
-        mBLE.setOnServiceDiscoverListener(mOnServiceDiscover);
-        //events when the data is communicated;
-        mBLE.setOnDataAvailableListener(mOnDataAvailable);
-
-    }
-
-    /**
-     * make the ble scan save energy
-     */
-    class BLEScan extends TimerTask{
-        @Override
-        public void run() {
-            scanLeDevice(true);
-            //bluetoothAdapter.startLeScan(mLeScanCallback);
-        }
-    }
-
-    /**
-     *
-     * @param enable
-     */
-    private void scanLeDevice(final boolean enable) {
-        if (enable) {
-            // Stops scanning after a pre-defined scan period.
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    mScanning = false;
-                    bluetoothAdapter.stopLeScan(mLeScanCallback);
-                }
-            }, ParameterManager.SCAN_PERIOD);
-
-            mScanning = true;
-            bluetoothAdapter.startLeScan(mLeScanCallback);
-        } else {
-            mScanning = false;
-            bluetoothAdapter.stopLeScan(mLeScanCallback);
-        }
-    }
-    // Device scan callback.
-        private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
-            @Override
-            public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
-                mLeDevices.add(device);
-                if(device.getAddress()!=null){
-                    if(device.getName().contains("GPS")) {
-                        System.out.println("the address is :"+device.getAddress());
-
-                        //device.getName().contains("GPS")
-                        //device.getAddress().equals("88:0F:10:9F:42:4C")
-
-                        System.out.println("hehe");
-                        //device.getAddress().equals("61:ED:75:1A:47:3A")
-                        //device.getAddress().equals("7C:EC:79:D6:84:A6")
-
-                        bluetoothAdapter.stopLeScan(mLeScanCallback);
-                        mBLE.connect(device.getAddress());
-                        //0000180F-0000-1000-8000-00805f9b34fb
-                        //ScanRecord mScanRecord = (ScanRecord) scanRecord;
-                        String str1 = new String(scanRecord);
-                        System.out.println("the scanRecord is :" + scanRecord + "the length is:" + scanRecord.length + "the str is:" + str1 + "the data is:" + scanRecord.toString());
-
-                        //Utils.bytesToHexString(scanRecord);// 数组反转
-                        // 将Byte数组的数据以十六进制表示并拼接成字符串
-                        StringBuffer str = new StringBuffer();
-                        int i = 0;
-                        for (byte b : scanRecord) {
-                            i = (b & 0xff);
-                            str.append(Integer.toHexString(i));
-                        }
-                        String discoveryServceID = str.toString();
-                        Log.d(TAG, device.getName() + " scanRecord:\n" + discoveryServceID);
-
-                        // 查询是否含有指定的Service UUID信息
-                        if (discoveryServceID.indexOf("2161aff4c0215e621e1f8c36c495a93f"
-                                .replace("-", "")) != -1) {
-                            Log.d(TAG, device.getName() + " has available service UUID");
-                        }
-                        //Log.d(TAG,"the scanRecord is :"+parse+"\n"+parse.length());
-                        bluetoothAdapter.stopLeScan(mLeScanCallback);
-                        Log.d(TAG, "attempt to connect the device!");
-                        Log.d(TAG, "find the device :" + device.getName()+" "+device.getAddress());
-                       }
-
-                    }
-                }
-
-
-        };
-
-    /**
-         * find the services on the ble devices;
-         */
-        private BluetoothLeClass.OnServiceDiscoverListener mOnServiceDiscover = new BluetoothLeClass.OnServiceDiscoverListener() {
-
-            @Override
-            public void onServiceDiscover(BluetoothGatt gatt) {
-                displayGattServices(mBLE.getSupportedGattServices());
-            }
-
-        };
-        /**
-         * find the data communication
-         */
-        private BluetoothLeClass.OnDataAvailableListener mOnDataAvailable = new BluetoothLeClass.OnDataAvailableListener() {
-
-            /**
-             * read the data on the ble devices
-             */
-
-            @Override
-            public void onCharacteristicRead(BluetoothGatt gatt,
-                                             BluetoothGattCharacteristic characteristic, int status) {
-                System.out.println("will read the value of the char");
-
-                if (status == BluetoothGatt.GATT_SUCCESS)
-
-                   //String num1 = new String(characteristic.getValue());
-                    Log.e(TAG, "onCharRead " + gatt.getDevice().getName()
-                            + " read "
-                            + characteristic.getUuid().toString()
-                            + " -> "
-                            + Utils.bytesToHexString(characteristic.getValue()));
-            }
-
-            /**
-             * write date to the ble devices
-             */
-
-            @Override
-            public void onCharacteristicWrite(BluetoothGatt gatt,
-                                              BluetoothGattCharacteristic characteristic) {
-                Log.e(TAG, "onCharWrite " + gatt.getDevice().getName()
-                        + " write "
-                        + characteristic.getUuid().toString()
-                        + " -> "
-                        + new String(characteristic.getValue()));
-            }
-        };
-
-        private void displayGattServices(List<BluetoothGattService> gattServices) {
-            if (gattServices == null) return;
-
-            for (BluetoothGattService gattService : gattServices) {
-                //-----Service information-----//
-                int type = gattService.getType();
-                Log.e(TAG, "-->service type:" + Utils.getServiceType(type));
-                Log.e(TAG, "-->includedServices size:" + gattService.getIncludedServices().size());
-                Log.e(TAG, "-->service uuid:" + gattService.getUuid());
-
-                //-----Characteristics information-----//
-                List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
-                for (final BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
-                    Log.e(TAG, "---->char uuid:" + gattCharacteristic.getUuid());
-
-                    int permission = gattCharacteristic.getPermissions();
-                    Log.e(TAG, "---->char permission:" + Utils.getCharPermission(permission));
-
-                    int property = gattCharacteristic.getProperties();
-                    Log.e(TAG, "---->char property:" + Utils.getCharPropertie(property));
-                    // get the value of the characteristic
-                    byte[] data = gattCharacteristic.getValue();
-                    if (data != null && data.length > 0) {
-                        Log.e(TAG, "---->char value:" + new String(data));
-                    }
-
-                    //UUID_KEY_DATA is the uuid which can interact with ble Characteristic
-                    if (gattCharacteristic.getUuid().toString().equals(UUID_KEY_DATA)) {
-                        //read the data of Characteristic will strike mOnDataAvailable.onCharacteristicRead()
-                        mHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                mBLE.readCharacteristic(gattCharacteristic);
-                            }
-                        }, 500);
-
-                        //receive the notice of Characteristic will be written,On receiving the data from bt will strike mOnDataAvailable.onCharacteristicWrite()
-                        mBLE.setCharacteristicNotification(gattCharacteristic, true);
-                        //set the value of the characteristic
-                        gattCharacteristic.setValue("send data->");
-                        //write data into the bT model
-                        mBLE.writeCharacteristic(gattCharacteristic);
-                    }
-
-                    //-----Descriptors information-----//
-                    List<BluetoothGattDescriptor> gattDescriptors = gattCharacteristic.getDescriptors();
-                    for (BluetoothGattDescriptor gattDescriptor : gattDescriptors) {
-                        Log.e(TAG, "-------->desc uuid:" + gattDescriptor.getUuid());
-                        int descPermission = gattDescriptor.getPermissions();
-                        Log.e(TAG, "-------->desc permission:" + Utils.getDescPermission(descPermission));
-
-                        byte[] desData = gattDescriptor.getValue();
-                        if (desData != null && desData.length > 0) {
-                            Log.e(TAG, "-------->desc value:" + new String(desData));
-                        }
-                    }
-                }
-            }
-
-        }
-
-
-
-    }
+}
 

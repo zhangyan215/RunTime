@@ -45,6 +45,7 @@ public class TaskManager{
         };
       //  handler.postDelayed(runnable, 100);// ??????100ms???runnable??
     }
+
     public void checkUndergoingTasks(){
         if(outgoingTasks.size()>0){
             int iterator ;
