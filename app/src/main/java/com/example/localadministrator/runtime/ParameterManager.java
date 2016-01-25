@@ -39,6 +39,6 @@ public class ParameterManager {
 	//if support peripheral mode
 	public static boolean isPeripheral ;
 	//if this device as request device;
-	public static boolean isRequest;
+	public static boolean isRequest = true;
 
 }

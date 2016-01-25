@@ -48,38 +48,24 @@ import java.util.UUID;
 
 public class innerDeviceService extends Service {
     private static String TAG = innerDeviceService.class.getCanonicalName();
-    private final static String UUID_KEY_DATA = "00002a19-0000-1000-8000-00805f9b34fb";
     TaskManager tm;
     ResourceManager rm;
     WiFiP2PInterfaces wifiP2PInterface;
-
-    private ArrayList<BluetoothDevice> mLeDevices = new ArrayList<>();
-
-    BluetoothAdapter bluetoothAdapter =null;
-    BluetoothLeAdvertiser bluetoothLeAdvertiser = null;
-    private BluetoothLeAdvertiser mBluetoothLeAdvertiser;
     IntentFilter intentFilter = null;
-    //IntentFilter intentFilterEnd =null;
-    private boolean mScanning = true;
-    private WifiManager wifiManager;
-    private WifiInfo wifiInfo;
     String str;
-    //String serviceType;
-    private BluetoothLeClass mBLE;
-    private WifiServiceManager mWifi ;
-
     public static Handler mHandler1 = new Handler();
     public static Handler mHandler2 = new Handler();
     MessengerChatService mChatService = null;
-    SocketManager manager = null;
+    SocketManager socketManager = null;
     int connectState;
     ActivityInvoke mActivityInvoke = null;
     ChannelManager mChannelManager = null;
-    BLEPeripheral blePeripheral;
+
     BLEGattManager bleGattManager;
 
 
     public innerDeviceService() {
+
         Log.d("rt", "initialized");
         tm = new TaskManager();
         rm = new ResourceManager();
@@ -95,54 +81,63 @@ public class innerDeviceService extends Service {
     innerDeviceAIDL.Stub binder=new innerDeviceAIDL.Stub() {
         @Override
         public int sendRQL(String RQL) {
+            if(ParameterManager.isRequest==true){
+                RQLParser parser = new RQLParser(RQL);
+                //  ParameterManager.serviceType = parser.getServices();
+                if(parser.checkGrammar()==false){
+                    return -1;
+                }
+                str= RQL;
 
+                //put the rql into the outgoingTask ArrayList
+                tm.outgoingTasks.addLast(parser);
+                System.out.println(parser.getDeviceName());
+
+                //manager.clientManage();
+                // System.out.println("the received udp value is"+ParameterManager.receive);
+
+                //mChatService = new MessengerChatService();
+
+                // deviceScan.scanLeDevice(true);
+
+                mChannelManager = new ChannelManager();
+                mChannelManager.channelChooseStrategy();
+
+                if(ParameterManager.isBTLE==true){
+                    //  mBTLEManager = new BTLEManager();
+                    bleGattManager = new BLEGattManager(innerDeviceService.this);
+                    bleGattManager.bleInitialize();
+                    bleGattManager.bleScan();
+
+                }
+                if(ParameterManager.isWifi==true){
+                    socketManager = new SocketManager(innerDeviceService.this);
+                    socketManager.setTCP_PORT(2400);
+                    socketManager.setUDP_PORT(24000);
+                    socketManager.setWifiState();
+                    ParameterManager.taskInfo = "this is a  task!";
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            socketManager.serverManage();
+                        }
+                    }).start();
+
+                }
+                if(ParameterManager.resultValue!=null){
+                    mActivityInvoke.broadcastresult();
+                }
+
+            }else{
+
+                Log.d(TAG, "1111");
+                mActivityInvoke = new ActivityInvoke(innerDeviceService.this);
+                mActivityInvoke.activityStart();
+            }
             // there should first be a task queue here,
             // then a thread process all the tasks.
-            RQLParser parser = new RQLParser(RQL);
-          //  ParameterManager.serviceType = parser.getServices();
-            if(parser.checkGrammar()==false){
-                return -1;
-            }
-            str= RQL;
-            manager = new SocketManager();
-            //put the rql into the outgoingTask ArrayList
-            tm.outgoingTasks.addLast(parser);
-            System.out.println(parser.getDeviceName());
 
-            //manager.clientManage();
-           // System.out.println("the received udp value is"+ParameterManager.receive);
 
-            //mChatService = new MessengerChatService();
-
-           // deviceScan.scanLeDevice(true);
-
-            mChannelManager = new ChannelManager();
-            mChannelManager.ChannelChooseStrategy();
-
-            if(ParameterManager.isBTLE==false){
-              //  mBTLEManager = new BTLEManager();
-                bleGattManager = new BLEGattManager(innerDeviceService.this);
-                bleGattManager.bleInitialize();
-                bleGattManager.bleScan();
-               // bleInitialize();
-                /*Timer timer = new Timer(false);
-                timer.schedule(new BLEScan(), ParameterManager.delay, ParameterManager.period);*/
-            }
-            if(ParameterManager.isWifi==false){
-                manager.setTCP_PORT(2400);
-                manager.setUDP_PORT(24000);
-                ParameterManager.taskInfo = "this is a  task!";
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        manager.serverManage();
-                    }
-                }).start();
-
-            }
-            Log.d(TAG, "1111");
-            mActivityInvoke = new ActivityInvoke(innerDeviceService.this);
-            mActivityInvoke.activityStart();
             //activityStart();
            // System.out.println(mLeDevices.size());
            // scanLeDevice(true);
@@ -152,37 +147,6 @@ public class innerDeviceService extends Service {
         }
     };
 
-    /**
-     * @int getWifiState()
-     * 0: WIFI_STATE_DISABLING
-     * 1: WIFI_STATE_DISABLED
-     * 2: WIFI_STATE_ENABLING
-     * 3: WIFI_STATE_ENABLED
-     * 4: WIFI_STATE_UNKNOWN  when launched in Simulator.
-     */
-    public void setWifiState(){
-        wifiManager= (WifiManager)getSystemService(WIFI_SERVICE);
-
-        if(!wifiManager.isWifiEnabled()){
-            wifiManager.setWifiEnabled(true);
-        }
-        wifiManager.startScan();
-        wifiManager.getScanResults();
-        System.out.println("the scanresults is:"+wifiManager.getScanResults());
-        //wifiInfo.getIpAddress();
-       // wifiInfo.getRssi();
-        //System.out.println("the wifiInfo is :"+wifiInfo.getRssi()+wifiInfo.getIpAddress());
-
-        System.out.println("wifi state------->" + wifiManager.getWifiState());
-        Log.d(TAG, "the wifi state is :"+wifiManager.getWifiState());
-       // Toast.makeText(innerDeviceService.this, "��ǰWIFI������״̬Ϊ"+wifiManager.getWifiState(),Toast.LENGTH_LONG).show();
-    }
-
-    public void send() {
-        Intent intent = new Intent("android.intent.action.MY_BROADCAST");
-        intent.putExtra("msg", str);
-        sendBroadcast(intent);
-    }
     @Override
     public IBinder onBind(Intent intent) {
         Log.d("rt",intent.toString());
@@ -193,7 +157,7 @@ public class innerDeviceService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-       // mBLE.close();
+
 
     }
 

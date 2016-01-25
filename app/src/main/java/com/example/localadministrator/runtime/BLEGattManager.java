@@ -68,8 +68,11 @@ public class BLEGattManager {
 			ParameterManager.isPeripheral = true;
 			blePeripheral = new BLEPeripheral(mContext);
 			if (blePeripheral.initialize()) {
-				ParameterManager.isRequest = false;
+				Log.i(TAG,"this device can  as assist device! and there need a function to determine the role of this device");
+				// determine whether this device as request or assist device
+				//ParameterManager.isRequest = false;
 			} else {
+				Log.i(TAG,"this device can only as request device!");
 				ParameterManager.isRequest = true;
 			}
 		}

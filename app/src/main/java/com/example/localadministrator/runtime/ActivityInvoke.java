@@ -50,4 +50,14 @@ public class ActivityInvoke {
 			mContext.startActivity(intent);
 		}
 	}
+	/**
+	 * send broadcast when receive the execution results
+	 */
+	public void broadcastresult() {
+		Intent intent = new Intent();
+		intent.setAction("result of task execution");
+		intent.putExtra("resultValue", ParameterManager.resultValue);
+		mContext.sendBroadcast(intent);
+	}
+
 }

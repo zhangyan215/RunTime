@@ -1,5 +1,6 @@
 package com.example.localadministrator.runtime;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -9,6 +10,7 @@ import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.media.FaceDetector;
+import android.net.wifi.WifiManager;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -53,6 +55,11 @@ public class SocketManager {
 	DatagramPacket dp;
 	private boolean allowRun = true;
 	private ServerThread mServerThread = null;
+	private WifiManager wifiManager;
+	private Context mContext;
+	public SocketManager(Context mContext){
+		this.mContext = mContext;
+	}
 	public void setTCP_PORT(int TCP_PORT){
 		this.TCP_PORT = TCP_PORT;
 
@@ -86,9 +93,34 @@ public class SocketManager {
 			e.printStackTrace();
 		}
 	}
+	/**
+	 * @int getWifiState()
+	 * 0: WIFI_STATE_DISABLING
+	 * 1: WIFI_STATE_DISABLED
+	 * 2: WIFI_STATE_ENABLING
+	 * 3: WIFI_STATE_ENABLED
+	 * 4: WIFI_STATE_UNKNOWN  when launched in Simulator.
+	 */
+	public void setWifiState(){
+		wifiManager= (WifiManager)mContext.getSystemService(mContext.WIFI_SERVICE);
+
+		if(!wifiManager.isWifiEnabled()){
+			wifiManager.setWifiEnabled(true);
+		}
+		wifiManager.startScan();
+		wifiManager.getScanResults();
+		System.out.println("the scanResults is:"+wifiManager.getScanResults());
+		//wifiInfo.getIpAddress();
+		// wifiInfo.getRssi();
+		//System.out.println("the wifiInfo is :"+wifiInfo.getRssi()+wifiInfo.getIpAddress());
+
+		System.out.println("wifi state------->" + wifiManager.getWifiState());
+		Log.d(TAG, "the wifi state is :" + wifiManager.getWifiState());
+
+	}
 
 
-		/**
+	/**
 	 * using UDP to broadcast the task info.
 	 * @throws IOException
 	 */

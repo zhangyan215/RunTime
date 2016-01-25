@@ -11,7 +11,7 @@ public class ChannelManager {
 	public ChannelManager(){
 
 	}
-	public void ChannelChooseStrategy(){
+	public void channelChooseStrategy(){
 		if(!ParameterManager.assistName.equals("any")){
 			Log.d(TAG,"will choose BTLE channel to execute this task!" );
 			ParameterManager.isWifi = false;
@@ -23,4 +23,6 @@ public class ChannelManager {
 			//choose wifi
 		}
 	}
+
+
 }
