@@ -73,7 +73,6 @@ public class innerDeviceService extends Service {
         wifiP2PInterface.setResourceManager(rm);
         wifiP2PInterface.setTaskManager(tm);
 
-        //taskProcesser.run();
       //  mWifi = new WifiServiceManager();
 
     }
@@ -81,59 +80,66 @@ public class innerDeviceService extends Service {
     innerDeviceAIDL.Stub binder=new innerDeviceAIDL.Stub() {
         @Override
         public int sendRQL(String RQL) {
-            if(ParameterManager.isRequest==true){
-                RQLParser parser = new RQLParser(RQL);
-                //  ParameterManager.serviceType = parser.getServices();
-                if(parser.checkGrammar()==false){
-                    return -1;
-                }
-                str= RQL;
+            RQLParser parser = new RQLParser(RQL);
+            //  ParameterManager.serviceType = parser.getServices();
+            if(parser.checkGrammar()==false){
+                return -1;
+            }
+            str= RQL;
 
-                //put the rql into the outgoingTask ArrayList
-                tm.outgoingTasks.addLast(parser);
-                System.out.println(parser.getDeviceName());
+            //put the rql into the outgoingTask ArrayList
+            tm.outgoingTasks.addLast(parser);
+           // TaskManager.randomTaskID(2);
+            ParameterManager.taskID = Integer.parseInt(TaskManager.randomTaskID(2));
+            Log.d(TAG,"the task id is:"+ParameterManager.taskID);
+            System.out.println(parser.getDeviceName());
 
-                //manager.clientManage();
-                // System.out.println("the received udp value is"+ParameterManager.receive);
+            //manager.clientManage();
+            // System.out.println("the received udp value is"+ParameterManager.receive);
 
-                //mChatService = new MessengerChatService();
+            //mChatService = new MessengerChatService();
 
-                // deviceScan.scanLeDevice(true);
+            // deviceScan.scanLeDevice(true);
 
-                mChannelManager = new ChannelManager();
-                mChannelManager.channelChooseStrategy();
+            mChannelManager = new ChannelManager();
+            //mChannelManager.channelChooseStrategy();
 
-                if(ParameterManager.isBTLE==true){
-                    //  mBTLEManager = new BTLEManager();
-                    bleGattManager = new BLEGattManager(innerDeviceService.this);
-                    bleGattManager.bleInitialize();
-                    bleGattManager.bleScan();
+            /*if(ParameterManager.isBTLE==true){
+                //  mBTLEManager = new BTLEManager();
+                bleGattManager = new BLEGattManager(innerDeviceService.this);
+                bleGattManager.bleInitialize();
+                bleGattManager.bleScan();
 
-                }
-                if(ParameterManager.isWifi==true){
+            }*/
+            if(ParameterManager.isWifi==false){
+                if(socketManager==null){
                     socketManager = new SocketManager(innerDeviceService.this);
                     socketManager.setTCP_PORT(2400);
                     socketManager.setUDP_PORT(24000);
                     socketManager.setWifiState();
-                    ParameterManager.taskInfo = "this is a  task!";
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            socketManager.serverManage();
-                        }
-                    }).start();
-
-                }
-                if(ParameterManager.resultValue!=null){
-                    mActivityInvoke.broadcastresult();
                 }
 
-            }else{
+                ParameterManager.taskInfo = mChannelManager.getBroadcastInfo();
 
-                Log.d(TAG, "1111");
-                mActivityInvoke = new ActivityInvoke(innerDeviceService.this);
-                mActivityInvoke.activityStart();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        socketManager.serverManage();
+                    }
+                }).start();
+
             }
+            mActivityInvoke = new ActivityInvoke(innerDeviceService.this);
+            //Log.d()
+           /* if(ParameterManager.resultValue!=null){
+
+                Log.d(TAG,"the resultValue is not null, so will broadcast resultValue!");
+                mActivityInvoke.broadcastResult();
+            }*/
+            Log.d(TAG, "1111");
+
+          //  mActivityInvoke.activityStart();
+
             // there should first be a task queue here,
             // then a thread process all the tasks.
 
@@ -146,6 +152,12 @@ public class innerDeviceService extends Service {
 
         }
     };
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+    }
 
     @Override
     public IBinder onBind(Intent intent) {

@@ -53,10 +53,10 @@ public class ActivityInvoke {
 	/**
 	 * send broadcast when receive the execution results
 	 */
-	public void broadcastresult() {
+	public  void broadcastResult() {
 		Intent intent = new Intent();
 		intent.setAction("result of task execution");
-		intent.putExtra("resultValue", ParameterManager.resultValue);
+		intent.putExtra("resultValue", "latitude:" + ParameterManager.latitude + "\nlongitude:" + ParameterManager.longitude);
 		mContext.sendBroadcast(intent);
 	}
 

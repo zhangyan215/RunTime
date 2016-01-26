@@ -14,6 +14,7 @@ public class RQLParser {
 	String Conditions = "";
 	String Services   = "";
 	String pureRQL = "";
+	String verb = "";
 	String[] parameters=null;
 	Long initTime ;
 	Long distriTime;
@@ -68,6 +69,7 @@ public class RQLParser {
 			for(ii=0;ii<rqlCommands.length;ii++){
 				rqlc = new RQLCommand(rqlCommands[ii]);
 				DeviceName += " "+rqlc.reqDeviceName();
+				verb += ""+ rqlc.reqVerb();
 				DeviceType += " "+rqlc.reqDeviceType();		
 				Conditions += " "+rqlc.reqCondition();
 				Services   += " "+rqlc.reqServiceType();
@@ -78,6 +80,7 @@ public class RQLParser {
 			DeviceType = DeviceType.trim();
 			Conditions = Conditions.trim();
 			Services =Services.trim();
+			verb = verb.trim();
 			pureRQL =pureRQL.replaceFirst("\\|", "");
 
 		}else{
@@ -87,6 +90,7 @@ public class RQLParser {
 			Conditions = rqlc.reqCondition();
 			Services   = rqlc.reqServiceType();
 			pureRQL    = rqlc.getPureRQL();
+			verb = rqlc.reqVerb();
 			parameters = rqlc.reqNoun_service_parameters();
 		}
 		
@@ -115,6 +119,7 @@ public class RQLParser {
 	public String getPureRQL(){
 		return pureRQL;
 	}
+	public String getVerb(){return verb;}
 	
 	private class RQLCommand{
 		public String rqlCommand;
@@ -202,14 +207,20 @@ public class RQLParser {
 				}
 			}
 			noun_service_name = tmp[0]+"/"+tmp[1];
-			ParameterManager.assistName = noun_device_name;
-			//Log.d(TAG,"the noun_service_type:")
-			ParameterManager.serviceType = noun_service_name;
+
+			setValue();
 			Log.d("RQLParser","the assistName is: "+ParameterManager.assistName+"the serviceType is:"+ParameterManager.serviceType);
 			
 			return this.grammarCheck();
 		}
-		
+		private void setValue(){
+			ParameterManager.assistName = noun_device_name;
+			Log.i(TAG, "the noun_service_type:" + ParameterManager.assistName);
+			ParameterManager.serviceType = noun_service_name;
+			Log.i(TAG, "the noun_service_type:" + ParameterManager.serviceType);
+			ParameterManager.verbValue = verb;
+			Log.i(TAG, "the verb in rql:" + ParameterManager.verbValue);
+		}
 		public boolean grammarCheck(){
 			if(!Arrays.asList(verbs).contains(this.verb)){
 				return false;
@@ -231,6 +242,7 @@ public class RQLParser {
 		public String reqServiceType(){
 			return this.noun_service_name;
 		}
+		public String reqVerb(){return this.verb;}
 		public String[] reqNoun_service_parameters(){
 			return this.noun_service_parameters;
 		}

@@ -43,10 +43,16 @@ public class SocketManager {
 	private Socket socket =null;
 	private ServerSocket mServerSocket = null;
 	private Socket client = null;
-	public DataInputStream isClient = null;
-	public DataOutputStream osClient = null;
-	public DataInputStream isServer = null;
-	public DataOutputStream osServer = null;
+	private DataInputStream isClient = null;
+	private DataOutputStream osClient = null;
+	private DataInputStream isServer = null;
+	private DataOutputStream osServer = null;
+	public JSONObject mfjs = new JSONObject();
+	public JSONObject headInfoObject;
+	public ChannelManager manager = new ChannelManager();
+	public int location;
+	public String fileName;
+	public byte[] buffer1;
 	//public byte[] send_data = new byte[1024];
 	byte[] data = new byte[8192];
 	public String str = "send udp";
@@ -109,7 +115,7 @@ public class SocketManager {
 		}
 		wifiManager.startScan();
 		wifiManager.getScanResults();
-		System.out.println("the scanResults is:"+wifiManager.getScanResults());
+		System.out.println("the scanResults is:" + wifiManager.getScanResults());
 		//wifiInfo.getIpAddress();
 		// wifiInfo.getRssi();
 		//System.out.println("the wifiInfo is :"+wifiInfo.getRssi()+wifiInfo.getIpAddress());
@@ -128,7 +134,7 @@ public class SocketManager {
 		DatagramSocket client_socket = new MulticastSocket();
 		InetAddress IPAddress =  InetAddress.getByName("255.255.255.255");
 		ParameterManager.send_data = ParameterManager.taskInfo.getBytes();
-		Log.d(TAG,"the broadcast info is:"+ParameterManager.taskInfo);
+		Log.d(TAG, "the broadcast info is:" + ParameterManager.taskInfo);
 
 		System.out.println(ParameterManager.send_data);
 		DatagramPacket send_packet = new DatagramPacket(ParameterManager.send_data,ParameterManager.taskInfo.length(),IPAddress , UDP_PORT);
@@ -187,8 +193,15 @@ public class SocketManager {
 
 	private void setServerSocket(){
 		try {
-			mServerSocket = new ServerSocket(TCP_PORT);
-			Log.d(TAG,"the TCP_PORT on Server is:"+TCP_PORT);
+			if(mServerSocket==null){
+				mServerSocket = new ServerSocket(TCP_PORT);
+			}
+
+			if (mServerSocket == null){
+				Log.e(TAG,"the serversocket is null");
+				return;
+			}
+			Log.d(TAG, "the TCP_PORT on Server is:" + TCP_PORT);
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -262,53 +275,26 @@ public class SocketManager {
 	private void chatProcessOnServer() throws IOException {
 
 		try{
-			//ioStreamOnServer();
-			/*dos = new DataOutputStream(client.getOutputStream());
-			is = new DataInputStream(client.getInputStream());*/
-
-			String value = readInputData(isServer);
+			String value = readString(isServer);
 			System.out.println("the value is:" + value);
-			/*str = readString(is);
-			if(parseBidInfo(str)){
-				dos.write(getAssureInfo().getBytes("UTF-8"));
-				dos.flush();
-			}
-			for(int i = 0;i<num;i++){
-				str =readString(is);
-				if(str!=null&&parseImageRequest(str)&&headInfoObject.optString("T")=="M"){
-					sendingImage(i);
-				}else{
-					dos.write(getFinishInfo().getBytes("UTF-8"));
-					dos.flush();
+			if(value != null){
+				//there need the device choose strategy
+				//....
+				//....
+				osServer.write(manager.getAssureInfo().getBytes("UTF-8"));
+				Log.d(TAG, "the assure info is:" + manager.getAssureInfo());
+				Log.i(TAG, "the assure info has been written to the client");
+				ParameterManager.resultValue = readString(isServer);
+				Log.d(TAG,"the result value is :"+ParameterManager.resultValue);
+				if(ParameterManager.resultValue!=null){
+					Log.d(TAG,"the resultValue is not null, so will broadcast resultValue!");
+					ActivityInvoke mActivityInvoke = new ActivityInvoke(mContext);
+					manager.parseResult(ParameterManager.resultValue);
+					mActivityInvoke.broadcastResult();
+					//mContext.sendBroadcast();
 				}
 
 			}
-
-			str= readString(is);
-			*//*Intent mIntent = new Intent();
-			mIntent.putExtra("result",str);
-			mIntent.setAction("resultInfo.zhy");
-			sendBroadcast(mIntent);*//*
-			System.out.println(str);
-			parseResult(str);
-			mTextView.post(new Runnable() {
-				@Override
-				public void run() {
-					mTextView.append("\nthe number of the images have been sent is:"+num);
-					mTextView.append("\nall images have been sent!");
-					mTextView.append("\nthe results of the face detection is:"+str);
-					//mTextView.append("\nthe face number is " + faceNumber);
-				}
-			});
-			System.out.println("the face number is:" + faceNumber);
-
-			if(dos!=null){
-				dos.close();
-
-			}
-			if(is!= null){
-				is.close();
-			}*/
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -318,6 +304,9 @@ public class SocketManager {
 			}
 			if (isServer != null) {
 				isServer.close();
+				//client.close();
+			}
+			if(client!=null){
 				client.close();
 			}
 
@@ -328,77 +317,89 @@ public class SocketManager {
 	}
 
 
+
 	/**
-	 * deal with the DataInputStream
+	 * deal with the DataInputStream  but it used when the length of is  is short.
 	 * @param is
 	 */
-	private String readInputData(DataInputStream is){
-		byte[] buffer = new byte[1024];
-		int transLen =0;
-		while(true){
-			int read =0;
+
+	public String readString(DataInputStream is){
+
+		int read = 0 ;
+		int readLen=0;
+		int curRead=0;
+		try {
+			while (is.available()==0);
+			buffer1 = new byte[is.available()];
+			System.out.println("available:"+is.available());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		str = null;
+		try {
+			read = is.read(buffer1,0,buffer1.length);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println("read:"+read);
+		//System.out.println(.toString(buffer1).toString());
+		mfjs= parseHead(buffer1);
+		if(mfjs!=null){
+			byte[] buffer2 = new byte[mfjs.optInt("L")];
+			System.out.println("length is :"+mfjs.optInt("L"));
+			curRead = read -location-2;
+			System.out.println("curRead:"+curRead);
+			System.arraycopy(buffer1, location + 2, buffer2, 0, curRead);
 			try {
-				read = is.read(buffer);
+				while(readLen<(mfjs.optInt("L"))) {
+					readLen +=curRead;
+
+					curRead =is.read(buffer2,readLen,is.available());
+
+				}
+				System.out.println("readLen="+readLen);
+				if(readLen == (mfjs.optInt("L"))){
+					System.out.println("read fully");
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			if(read == -1)
-				break;
-			transLen += read;
-
-		}
-		String str = new String (buffer);
-		Log.d(TAG,"the received info is:"+str);
-		return str;
-
-	}
-	class ServerThread extends Thread{
-
-		@Override
-		public void run() {
-			// TODO Auto-generated method stub
-			while(allowRun){
-				try {
-					client = mServerSocket.accept();
-					Log.i(TAG, "Service accept the request from the client..");
-					ioStreamOnServer();
-					//chatProcessOnServer();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+			String type = mfjs.optString("T");
+			if(type.equals("M")){
+				str = new String(buffer2);
 			}
 		}
+		return str;
 	}
 	//parseHead
 	public JSONObject parseHead(byte[] buffer){
-		JSONObject headInfoObject = new JSONObject();
+		headInfoObject = new JSONObject();
 		int length = buffer.length;
 		System.out.println(length);
 		System.out.println(new String(buffer));
-		int maxHeadLength = 2+12+128;//最大的头长度
+		int maxHeadLength = 2+12+128;//
 		int lookRange = maxHeadLength > length ? length : maxHeadLength;
 		String stringBuffer = new String(buffer);
-		int location = stringBuffer.indexOf("##");
-		System.out.println("location:" + location);
+		location = stringBuffer.indexOf("##");
+		System.out.println("location:"+location);
 		//int location = buffer.indexOf("##",lookRange);
 		if(location == 0){
-			//非法的头信息
+
 			return null;
 		}else{
-			//获取消息类型
+			//锟斤拷取锟斤拷息锟斤拷锟斤拷
 			String headString = stringBuffer.substring(0, location);
 			//System.out.println("headString:"+headString);
 			String[]components = headString.split("#");
 			//System.out.println(components.length+"component");
 			if(components.length< 2){
-				//非法的头信息 缺少消息类型或者内容长度
+
 				return null;
 			}
 
-			int contentLen = Integer.parseInt(components[1]);//获取消息或者文件内容的长度
+			int contentLen = Integer.parseInt(components[1]);//
 			//System.out.println("message length:"+contentLen);
-			if(components[0].equals("M")){//准备接收消息
+			if(components[0].equals("M")){//准
 				//JSONObject mjs = new JSONObject();
 				try {
 					headInfoObject.put("T", "M");
@@ -408,27 +409,27 @@ public class SocketManager {
 					e.printStackTrace();
 				}
 				return headInfoObject;
-				//返回类型，长度，内容开始位置，文件名
+
 				//return {"T":"M","L":contentLen,"CS":location+2};
 
-			}else if(components[0].equals("F")){//准备接收文件
+			}else if(components[0].equals("F")){
 				if(components.length < 3){
-					//非法的头信息，缺少文件名
+
 					return null;
 				}
-				//fileName = components[2];
-				//System.out.println("fileName:"+fileName);
+				fileName = components[2];
+				System.out.println("fileName:"+fileName);
 
 				try {
 					headInfoObject.put("T", "F");
 					headInfoObject.put("L",contentLen);
 					headInfoObject.put("CS",location+2);
-				//	headInfoObject.put("N",fileName);
+					headInfoObject.put("N",fileName);
 				} catch (JSONException e) {
 					e.printStackTrace();
 				}
 				return headInfoObject;
-				//返回类型，长度，内容开始位置，文件名
+
 				//return {"T":"F","L":contentLen,"CS":location+2,"N":fileName};
 			}else{
 				return null;
@@ -437,137 +438,25 @@ public class SocketManager {
 		}
 	}
 
-	/**
-	 * get the Bidinfo
-	 */
-	public String getBidInfo(){
-		JSONObject outJSONObject = new JSONObject();
-		JSONObject inJSONObject = new JSONObject();
-		String bidinfo = null;
-		try {
-			outJSONObject.put("MSG_TYPE",0);
-			inJSONObject.put("CPUhz",1440);
-			inJSONObject.put("BLev",0.5);
-			inJSONObject.put("BDNAME","server_offload");
-			outJSONObject.put("MSG_CONY",inJSONObject);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		int length = outJSONObject.toString().length();
-		bidinfo ="M#"+length+"##"+outJSONObject.toString();
-		return bidinfo;
-	}
-	/**
-	 * get the image request
-	 */
-	public String getImageRequest(){
-		JSONObject outJSONObject = new JSONObject();
-		JSONObject inJSONObject = new JSONObject();
-		String imageInfo = null;
-		try {
-			outJSONObject.put("MSG_TYPE",2);
-			//inJSONObject.put("DEV_ID",devID);
-			outJSONObject.put("MSG_CONY",inJSONObject);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		imageInfo ="M#"+outJSONObject.toString().length()+"##"+outJSONObject.toString();
-		return imageInfo;
+	class ServerThread extends Thread{
 
-	}
-	/**
-	 * parse the assure information
-	 */
-	public boolean parseAssInfo(String str){
-		JSONObject jObject = null;
-
-		try {
-			jObject = new JSONObject(str);
-			int type = jObject.optInt("MSG_TYPE");
-			System.out.println(type);
-			JSONObject mjObject =jObject.optJSONObject("MSG_CONY");
-			//devID = mjObject.optInt("DEV_ID");
-			if(type==1) {
-			//	imageNum = mjObject.optInt("PS_PICN");
-				return true;
-			}
-
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
-	/**
-	 * parse the finish information
-	 */
-	public boolean parseFinishInfo(String str){
-		JSONObject jObject = null;
-		try {
-			jObject = new JSONObject(str);
-			int type = jObject.optInt("MSG_TYPE");
-			System.out.println(type);
-			String value = jObject.optString("MSG_CONY");
-			if(type==3){
-				return true;
-			}
-
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
-	/**
-	 * get the result information
-	 */
-	public String getResult(){
-		JSONObject outJSONObject = new JSONObject();
-		JSONObject inJSONObject = new JSONObject();
-		String result = null;
-		try {
-			outJSONObject.put("MSG_TYPE",4);
-			//inJSONObject.put("DEV_ID", devID);
-			//inJSONObject.put("RELS", innJSONObject);
-			outJSONObject.put("MSG_CONY",inJSONObject);
-
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		result = "M#"+outJSONObject.toString().length()+"##"+outJSONObject.toString();
-		return result;
-	}
-}
-/*class ServerThread extends Thread {
-		private Socket client;
-		private BufferedReader bufferedReader;
-		private PrintWriter printWriter;
-
-		public ServerThread(Socket s)throws IOException {
-			client = s;
-
-			bufferedReader =new BufferedReader(new InputStreamReader(client.getInputStream()));
-
-			printWriter =new PrintWriter(client.getOutputStream(),true);
-			System.out.println("Client(" + getName() +") come in...");
-
-			start();
-		}
-
+		@Override
 		public void run() {
-			try {
-				String line = bufferedReader.readLine();
-
-				while (!line.equals("bye")) {
-					printWriter.println("continue, Client(" + getName() +")!");
-					line = bufferedReader.readLine();
-					System.out.println("Client(" + getName() +") say: " + line);
+			// TODO Auto-generated method stub
+			while(allowRun){
+				try {
+					client = mServerSocket.accept();
+					Log.i(TAG, "Service start accepting the request from the client..");
+					ioStreamOnServer();
+					//chatProcessOnServer();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-				printWriter.println("bye, Client(" + getName() +")!");
-
-				System.out.println("Client(" + getName() +") exit!");
-				printWriter.close();
-				bufferedReader.close();
-				client.close();
-			}catch (IOException e) {
 			}
 		}
-	}*/
+	}
+
+
+
+}

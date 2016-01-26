@@ -13,7 +13,6 @@ import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -135,13 +134,6 @@ public class BLEGattManager {
 			if(device.getAddress()!=null){
 				if(device.getName().contains("GPS")) {
 					System.out.println("the address is :"+device.getAddress());
-
-					//device.getName().contains("GPS")
-					//device.getAddress().equals("88:0F:10:9F:42:4C")
-
-					System.out.println("hehe");
-					//device.getAddress().equals("61:ED:75:1A:47:3A")
-					//device.getAddress().equals("7C:EC:79:D6:84:A6")
 
 					bluetoothAdapter.stopLeScan(mLeScanCallback);
 					mBLE.connect(device.getAddress());

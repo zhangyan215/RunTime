@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Random;
 import java.util.TimerTask;
 
 
@@ -108,5 +109,29 @@ public class TaskManager{
 
     void onDestroy(){
         handler.removeCallbacks((Runnable) this);// ???????
+    }
+
+
+    public static String randomTaskID(int n) {
+        if (n < 1 || n > 10) {
+            throw new IllegalArgumentException("cannot random " + n + " bit number");
+        }
+        Random ran = new Random();
+        if (n == 1) {
+            return String.valueOf(ran.nextInt(10));
+        }
+        int bitField = 0;
+        char[] chs = new char[n];
+        for (int i = 0; i < n; i++) {
+            while(true) {
+                int k = ran.nextInt(10);
+                if( (bitField & (1 << k)) == 0) {
+                    bitField |= 1 << k;
+                    chs[i] = (char)(k + '0');
+                    break;
+                }
+            }
+        }
+        return new String(chs);
     }
 }

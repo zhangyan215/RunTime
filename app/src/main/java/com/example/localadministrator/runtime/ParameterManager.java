@@ -30,15 +30,41 @@ public class ParameterManager {
 	public static String serviceType = "";
 	//the name in the rql
 	public static String assistName = "";
+	//the verb of rql
+	public static String verbValue = "";
+	//the
 	//if use BTLE
 	public static boolean isBTLE;
 	//if use Wifi
 	public static boolean isWifi;
-	//the result
-	public static String resultValue = "";
+	//the result value get from the other device
+	public static String resultValue ;
+	//the result get from the app on the device
+	public static String resultInfo;
 	//if support peripheral mode
 	public static boolean isPeripheral ;
 	//if this device as request device;
 	public static boolean isRequest = true;
+	//the broadcast info
+	public static String broadcastInfo = "";
+	//the bid info
+	public static String bidInfo = "";
+	//the assure Info
+	public static String assureInfo = "";
+	//the task id
+	public static int taskID ;
+	//the broadcast device's name
+	public static String broadcastName = "";
+	//the assist device load
+	public static double deviceLoad ;      //协助设备的负载用于设备选择时的参考  参数值从竞价消息中获取
+	//the assist device power
+	public static double devicePower;      //协助设备的电量 同上  parseBidInfo
+	//the assist device id
+	public static int assistID;           // 协助设备被分配到的id  用于返回结果时调用  从确认消息中获取
+	//the latitude
+	public static String latitude;        // 纬度信息 用于在请求GPS时向APP广播的结果  从结果中获取
+	//the longitude
+	public static String longitude;       // 经度信息 同上    parseResult
+
 
 }
