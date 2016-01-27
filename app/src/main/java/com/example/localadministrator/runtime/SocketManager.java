@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -284,15 +285,22 @@ public class SocketManager {
 				osServer.write(manager.getAssureInfo().getBytes("UTF-8"));
 				Log.d(TAG, "the assure info is:" + manager.getAssureInfo());
 				Log.i(TAG, "the assure info has been written to the client");
-				ParameterManager.resultValue = readString(isServer);
-				Log.d(TAG,"the result value is :"+ParameterManager.resultValue);
-				if(ParameterManager.resultValue!=null){
-					Log.d(TAG,"the resultValue is not null, so will broadcast resultValue!");
-					ActivityInvoke mActivityInvoke = new ActivityInvoke(mContext);
-					manager.parseResult(ParameterManager.resultValue);
-					mActivityInvoke.broadcastResult();
-					//mContext.sendBroadcast();
+				if(ParameterManager.serviceType.equals("sensor/gps")){
+					ParameterManager.resultFromOther= readString(isServer);
+					Log.d(TAG, "the result value is :" + ParameterManager.resultFromOther);
+					if(ParameterManager.resultFromOther!=null){
+						Log.d(TAG, "the resultValue is not null, so will broadcast resultValue!");
+						ActivityInvoke mActivityInvoke = new ActivityInvoke(mContext);
+						manager.parseResult(ParameterManager.resultFromOther);
+						mActivityInvoke.broadcastResult();
+						ParameterManager.resultFromOther=null;
+						//mContext.sendBroadcast();
+					}
+				}else if(ParameterManager.serviceType.equals("image/facedetection")){
+					manager.sendingImage(osServer);
 				}
+
+
 
 			}
 		}catch(Exception e){
@@ -437,6 +445,8 @@ public class SocketManager {
 
 		}
 	}
+
+
 
 	class ServerThread extends Thread{
 

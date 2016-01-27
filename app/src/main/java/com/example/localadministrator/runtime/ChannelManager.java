@@ -5,6 +5,11 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+
 /**
  * Created by Zhy on 2016/1/22.
  */
@@ -14,9 +19,13 @@ public class ChannelManager {
 	public ChannelManager(){
 
 	}
+
+	/**
+	 * the channelChooseStrategy according to the task to choose BLE of Wifi
+	 */
 	public void channelChooseStrategy(){
 		if(!ParameterManager.assistName.equals("any")){
-			Log.d(TAG,"will choose BTLE channel to execute this task!" );
+			Log.d(TAG,"will choose BLE channel to execute this task!" );
 			ParameterManager.isWifi = false;
 			ParameterManager.isBTLE = true;
 		}else{
@@ -42,7 +51,14 @@ public class ChannelManager {
 			innerJSONObject.put("V",ParameterManager.verbValue);  //rql 中动词
 			innerJSONObject.put("DD",ParameterManager.assistName); //rql 中设备名称:any/certain
 			innerJSONObject.put("RC","sensor");                    //分类  data/app/text
-			innerJSONObject.put("RN",ParameterManager.serviceType);  // rql 中service 名称 gps、facedetection
+			if(ParameterManager.serviceType.equals("sensor/gps")){
+				//如果为gps 则将gps传给RN参数
+				innerJSONObject.put("RN",ParameterManager.serviceType);  // rql 中service名称 gps、facedetection
+			}else if(ParameterManager.serviceType.equals("image/facedetection")){
+				//若为facedetection 则把一张图片的目录传给RN参数
+				innerJSONObject.put("RN",ParameterManager.imagePath);
+			}
+
 			innerJSONObject.put("ADV",null);                      // 由执行app来定义
 			innerJSONObject.put("AN","null");   //启动的App名称
 			inJSONObject.put("RI",innerJSONObject);
@@ -176,7 +192,7 @@ public class ChannelManager {
 			outJSONObject.put("MT",3);
 			inJSONObject.put("DID",ParameterManager.assistID);      //被分配的id 从确认消息中获取
 			inJSONObject.put("TI",ParameterManager.taskID);   		// Task id
-			inJSONObject.put("TRELT",ParameterManager.resultInfo);
+			inJSONObject.put("TRELT",ParameterManager.resultFromApp);
 			outJSONObject.put("MC",inJSONObject);
 			innJSONObject.put("DN","Nexus 6");   //广播者的信息 如设备名称
 			outJSONObject.put("MH",innJSONObject);
@@ -184,30 +200,63 @@ public class ChannelManager {
 			e.printStackTrace();
 		}
 		int length = outJSONObject.toString().length();
-		ParameterManager.resultInfo ="M#"+length+"##"+outJSONObject.toString();
-		return ParameterManager.resultInfo;
+		ParameterManager.resultFromApp ="M#"+length+"##"+outJSONObject.toString();
+		return ParameterManager.resultFromApp;
 	}
 
 	/**
 	 * parse the result info
 	 * used in request device
 	 * intent to get the value of "TRELT"    关于不同任务的结果还需要再分别对待
-	 * @param resultValue
+	 * @param result
 	 */
-	public void parseResult(String resultValue){
+	public void parseResult(String result){
 		try {
-			JSONObject outJSONObject = new JSONObject(resultValue);
+			JSONObject outJSONObject = new JSONObject(result);
 			JSONObject innJSONObject = outJSONObject.getJSONObject("MC");
 			JSONObject innerJSONObject = innJSONObject.getJSONObject("TRELT");
-
+			//ParameterManager.resultFromOther = innerJSONObject.toString();
 			ParameterManager.latitude = innerJSONObject.getString("lat");          // 处理的GPS信息
 			ParameterManager.longitude = innerJSONObject.getString("lng");
-
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
 	}
+	/**
+	 * send image
+	 * @param dos
+	 */
+	public void sendingImage(DataOutputStream dos){
 
+		File file = new File(ParameterManager.imagePath);
+		FileInputStream fileStream = null;
+		try {
+			fileStream = new FileInputStream(file);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		byte[] buffer = new byte[8192];
+		try {
+			String headStr = "F#"+file.length()+"#"+file.getName()+"##";
+			dos.write(headStr.getBytes("UTF-8"));
+			System.out.println(file.length());
+			int length = 0;
+			int translen = 0;
+			while((length=fileStream.read(buffer,0,buffer.length))!=-1){
+				dos.write(buffer,0,length);
+				dos.flush();
+			}
+
+			System.out.println("write finished");
+
+			if (fileStream != null) {
+				fileStream.close();
+				//client.close();
+			}
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+	}
 	/**
 	 * get the image request
 	 */

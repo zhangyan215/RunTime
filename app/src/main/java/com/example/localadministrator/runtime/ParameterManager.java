@@ -34,21 +34,21 @@ public class ParameterManager {
 	public static String verbValue = "";
 	//the
 	//if use BTLE
-	public static boolean isBTLE;
+	public static boolean isBTLE;                //判断是否选择BLE信道
 	//if use Wifi
-	public static boolean isWifi;
+	public static boolean isWifi;                // 判断是否选择Wifi信道
 	//the result value get from the other device
-	public static String resultValue ;
+	public static String resultFromOther ;        //从其他设备获得的任务执行结果
 	//the result get from the app on the device
-	public static String resultInfo;
+	public static String resultFromApp;           //帮助其他设备执行任务时从APP获得的执行结果
 	//if support peripheral mode
-	public static boolean isPeripheral ;
+	public static boolean isPeripheral ;         // 判断本设备是否支持Peripheral模式
 	//if this device as request device;
-	public static boolean isRequest = true;
+	public static boolean isRequest = true;      // 判断本设备是作为请求方还是协助方
 	//the broadcast info
-	public static String broadcastInfo = "";
+	public static String broadcastInfo ;        // 广播的信息
 	//the bid info
-	public static String bidInfo = "";
+	public static String bidInfo = "";         //
 	//the assure Info
 	public static String assureInfo = "";
 	//the task id
@@ -65,6 +65,10 @@ public class ParameterManager {
 	public static String latitude;        // 纬度信息 用于在请求GPS时向APP广播的结果  从结果中获取
 	//the longitude
 	public static String longitude;       // 经度信息 同上    parseResult
+	//the imagePath
+	public static final String imagePath ="storage/emulated/0/DCIM/Camera/singers.jpg";
+	//the outging task size;
+	public static int outTaskSize;
 
 
 }

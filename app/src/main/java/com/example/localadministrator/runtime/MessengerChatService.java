@@ -24,16 +24,17 @@ public class MessengerChatService extends Service {
 	public final static int STRINGID = 0x0011;
 	String strFromClient = null;
 	public String result = "";
+	private FIleUtils fIleUtils= new FIleUtils();
 	Message msgTo =null;
 	Bundle bundle =null;
-	public void setImagePath(){
+	/*public void setImagePath(){
 		imagePath.add("storage/emulated/0/DCIM/Camera/20151016104236.png");
 		imagePath.add("storage/emulated/0/DCIM/Camera/SoccerPlayer.jpg");
 		imagePath.add("storage/emulated/0/DCIM/Camera/fd.jpg");
 		imagePath.add("storage/emulated/0/DCIM/Camera/fkw.jpg");
 		imagePath.add("storage/emulated/0/DCIM/Camera/random.jpg");
 		imagePath.add("storage/emulated/0/DCIM/Camera/singers.jpg");
-	}
+	}*/
 	private Messenger messenger = new Messenger(new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
@@ -46,7 +47,7 @@ public class MessengerChatService extends Service {
 			if (msg.arg1 == SERVICEID) {
 				//接受从客户端传来的消息
 				msgTo.arg1 = 0X0002;
-				setImagePath();
+				//setImagePath();
 				//System.out.println("the imagePath is"+imagePath.toString());
 				bundle.putStringArrayList("content", imagePath);
 			} else if(msg.arg1 == STRINGID){
@@ -69,7 +70,7 @@ public class MessengerChatService extends Service {
 		Message msgTo = Message.obtain();
 		msgTo.arg1 = 0X0002;
 		Bundle bundle = new Bundle();
-		setImagePath();
+		//setImagePath();
 		//System.out.println("the imagePath is"+imagePath.toString());
 		bundle.putString("content", reply);
 		msgTo.setData(bundle);
@@ -84,6 +85,7 @@ public class MessengerChatService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		Log.i(TAG, "onCreate");
+		imagePath = fIleUtils.getImagePath();
 	}
 	public String dealResultMessage(){
 		if(result==""){

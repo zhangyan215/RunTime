@@ -148,8 +148,11 @@ public class innerDeviceService extends Service {
            // System.out.println(mLeDevices.size());
            // scanLeDevice(true);
            // tm.outgoingTasks.removeFirst();
-            return tm.outgoingTasks.size()-1;
+            if(ParameterManager.resultFromOther!=null){
+                return tm.outgoingTasks.size()-1;
+            }
 
+            return tm.outgoingTasks.size();
         }
     };
 

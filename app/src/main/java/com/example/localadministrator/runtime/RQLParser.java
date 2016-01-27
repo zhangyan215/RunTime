@@ -215,7 +215,7 @@ public class RQLParser {
 		}
 		private void setValue(){
 			ParameterManager.assistName = noun_device_name;
-			Log.i(TAG, "the noun_service_type:" + ParameterManager.assistName);
+			Log.i(TAG, "the noun_device_name:" + ParameterManager.assistName);
 			ParameterManager.serviceType = noun_service_name;
 			Log.i(TAG, "the noun_service_type:" + ParameterManager.serviceType);
 			ParameterManager.verbValue = verb;

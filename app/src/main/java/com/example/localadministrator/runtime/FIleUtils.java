@@ -10,9 +10,9 @@ import java.util.List;
  * Created by Zhy on 2016/1/12.
  */
 public class FIleUtils {
-	public List<String> getImagePath() {
+	public ArrayList<String> getImagePath() {
 		// image list
-		List<String> imagePathList = new ArrayList<String>();
+		ArrayList<String> imagePathList = new ArrayList<String>();
 		// get the path of the image file   File.separator(/)
 		String state = Environment.getExternalStorageState();
 		System.out.println(state);
